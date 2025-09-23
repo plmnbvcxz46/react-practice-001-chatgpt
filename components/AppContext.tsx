@@ -5,6 +5,7 @@ import { Dispatch, ReactNode, SetStateAction, createContext, useContext, useMemo
 
 type State = {
   displayNavigation: boolean
+  theme: "dark" | "light"
 }
 
 type AppContextProps = {
@@ -23,7 +24,7 @@ export default function AppContextProvider({
 } : {
   children: ReactNode
 }) {
-  const [state, setState] = useState({ displayNavigation: true})
+  const [state, setState] = useState<State>({ displayNavigation: true, theme: "light"})
   const contextvalue = useMemo(() => {
     return { state, setState}
   }, [state, setState])

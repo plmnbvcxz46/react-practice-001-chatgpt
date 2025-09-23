@@ -3,7 +3,7 @@ import { HiPlus } from "react-icons/hi"
 import { LuPanelLeft } from "react-icons/lu"
 import { useAppContext } from "@/components/AppContext"
 
-export default function Navigation(){
+export default function Menubar(){
   const { setState } = useAppContext()
   return (
     <div className="flex space-x-3">
@@ -17,7 +17,7 @@ export default function Navigation(){
         icon = { LuPanelLeft }
         variant= "outline"
         onClick={() => {
-          setState((v)=>({
+          setState(v => ({
             ...v,
             displayNavigation: false
           }))
