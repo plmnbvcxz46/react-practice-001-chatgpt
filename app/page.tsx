@@ -5,9 +5,9 @@ import Navigation from "@/components/home/Navigation/index"
 import { useAppContext } from "@/components/AppContext"
 
 export default function Home(){
-  const { state: { theme } } = useAppContext()
+  const { state: { themeMode } } = useAppContext()
   return(
-    <div className={`${theme === "dark" ? "dark" : ""} flex h-full`}>
+    <div className={`${themeMode === "dark" ? "dark" : ""} flex h-full`}>
       <Navigation />
       <Main />
     </div>
