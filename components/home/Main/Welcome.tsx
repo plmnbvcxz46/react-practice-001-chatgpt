@@ -1,3 +1,4 @@
+import Example from "./Example";
 import ModelSelect from "./ModelSlect";
 
 export function Welcome(){
@@ -6,5 +7,6 @@ export function Welcome(){
     <h1 className="mt-20 text-4xl font-bold">
       Welcome to use the Ai model!
     </h1>
+    <Example />
   </div>
 }

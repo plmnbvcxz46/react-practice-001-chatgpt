@@ -10,8 +10,8 @@ export default function ChatInput() {
       className="
         absolute bottom-0 inset-x-0 
         pt-10
-        bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.99)_80%)]
-        dark:bg-[linear-gradient(180deg,rgba(31,41,55,0)_0%,rgba(31,41,55,0.98)_80%)]
+        !bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.99)_80%)]
+        dark:!bg-[linear-gradient(180deg,rgba(31,41,55,0)_0%,rgba(31,41,55,0.98)_80%)]
       "
     >
       <div className="w-full mx-auto flex max-w-4xl flex-col items-center space-y-4 p-4">

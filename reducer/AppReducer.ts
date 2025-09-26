@@ -9,10 +9,10 @@
   UPDATE = "UPDATE"
  }
 
- type UpdateAction = {
+ type UpdateAction<K extends keyof State = keyof State> = {
   type: ActionType.UPDATE
-  field: string
-  value: any
+  field: K
+  value: State[K]
  }
 
  export type Action = UpdateAction
@@ -23,7 +23,7 @@
   currentModel: "gpt-3.5"
  }
 
- export function reducer(state: State, action: Action) {
+ export function reducer(state: State, action: Action): State {
   switch (action.type) {
     case ActionType.UPDATE:
       return { ...state, [action.field]: action.value}
