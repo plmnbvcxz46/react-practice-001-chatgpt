@@ -13,7 +13,7 @@ export default function Example(){
     }
   }, [showFull])
   return(
-    <div className="mb-60 mt-auto">
+    <div className="mb-40 mt-auto">
         <div className="flex justify-center mt-20 mb-4 text-4xl">
           <MdOutlineTipsAndUpdates />
         </div>
@@ -27,12 +27,12 @@ export default function Example(){
           }
         </ul>
         {
-          !showFull && (
+          (
             <>
-              <p className="p-2 text-center">...</p>
+              <p className="p-2 text-center">{!showFull && "..."}</p>
               <div className="flex items-center justify-center w-full space-x-2 mt-10">
                 <hr className="flex-1 border-t border-dotted border-gray-300 dark:border-gray-600"/>
-                  <Button onClick={() => setshowFull(true)}>显示全部</Button>
+                  <Button onClick={() => setshowFull(!showFull)}>{ !showFull ? "展示全部" : "收起"}</Button>
                 <hr className="flex-1 border-t border-dotted border-gray-300 dark:border-gray-600"/>
               </div>
             </>
