@@ -9,7 +9,7 @@ export default function Example(){
     if(showFull) {
       return examples
     }else{
-      return examples.slice(0, 20)
+      return examples.slice(0, 15)
     }
   }, [showFull])
   return(
