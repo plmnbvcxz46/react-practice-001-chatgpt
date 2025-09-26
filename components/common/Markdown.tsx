@@ -15,27 +15,28 @@ const Markdown = ({
   ...rest
 }: MarkdownProps) => {
   const defaultCodeRenderer = ({ inline, className, children, ...props }: any) => {
-    const match = /language-(\w+)/.exec(className ?? '');
-    const language = match?.[1] ?? 'plaintext';
-    const code = String(children).replace(/\n$/, '');
+    const code = String(children ?? '');
 
-    if (!inline) {
+    if (inline || (!className && !/\n/.test(code))) {
       return (
-        <SyntaxHighlighter
-          style={a11yDark as any}
-          language={language}
-          PreTag="div"
-          {...props}
-        >
-          {code}
-        </SyntaxHighlighter>
+        <code className={className} {...props}>
+          {children}
+        </code>
       );
     }
 
+    const match = /language-(\w+)/.exec(className ?? '');
+    const language = match?.[1] ?? 'plaintext';
+
     return (
-      <code className={className} {...props}>
-        {children}
-      </code>
+      <SyntaxHighlighter
+        style={a11yDark as any}
+        language={language}
+        PreTag="div"
+        {...props}
+      >
+        {code.replace(/\n$/, '')}
+      </SyntaxHighlighter>
     );
   };
 
