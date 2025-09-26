@@ -16,16 +16,18 @@ const Markdown = ({
 }: MarkdownProps) => {
   const defaultCodeRenderer = ({ inline, className, children, ...props }: any) => {
     const match = /language-(\w+)/.exec(className ?? '');
+    const language = match?.[1] ?? 'plaintext';
+    const code = String(children).replace(/\n$/, '');
 
-    if (!inline && match) {
+    if (!inline) {
       return (
         <SyntaxHighlighter
           style={a11yDark as any}
-          language={match[1] ?? ''}
+          language={language}
           PreTag="div"
           {...props}
         >
-          {String(children).replace(/\n$/, '')}
+          {code}
         </SyntaxHighlighter>
       );
     }
