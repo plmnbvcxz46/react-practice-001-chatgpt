@@ -4,36 +4,32 @@ import { FiSend } from "react-icons/fi";
 import { MdRefresh } from "react-icons/md";
 import { PiLightningFill } from "react-icons/pi";
 import TestareaAutoSize from "react-textarea-autosize";
-import POST from "@/app/api/chat";
 export default function ChatInput() {
-  const [messageText, setMessageText] = useState ("")
+  const [messageText, setMessageText] = useState("")
   async function send() {
-    const body = JSON.stringify(messageText)
+    const body = JSON.stringify({messageText})
     const response = await fetch("/api/chat", {
-      method: "POST", 
+      method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body
     })
-    if(!response.ok){
+    if (!response.ok) {
       console.log(response.statusText)
       return
     }
-    if(!body){
+    if (!response.body) {
       console.log("body error")
       return
     }
-    const reader = response.body?.getReader()
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
     let done = false
-    let decoder = new TextDecoder()
-    while(!done){
-      const result = await reader?.read()
-      if(!result){
-        return
-      }
+    while (!done) {
+      const result = await reader.read()
       done = result.done
-      const chunk =decoder.decode(result?.value)
+      const chunk = decoder.decode(result.value)
       console.log(chunk)
     }
     setMessageText("")
