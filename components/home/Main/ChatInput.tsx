@@ -1,10 +1,43 @@
 import Button from "@/components/common/Button";
+import { useState } from "react";
 import { FiSend } from "react-icons/fi";
 import { MdRefresh } from "react-icons/md";
 import { PiLightningFill } from "react-icons/pi";
 import TestareaAutoSize from "react-textarea-autosize";
-
+import POST from "@/app/api/chat";
 export default function ChatInput() {
+  const [messageText, setMessageText] = useState ("")
+  async function send() {
+    const body = JSON.stringify(messageText)
+    const response = await fetch("/api/chat", {
+      method: "POST", 
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body
+    })
+    if(!response.ok){
+      console.log(response.statusText)
+      return
+    }
+    if(!body){
+      console.log("body error")
+      return
+    }
+    const reader = response.body?.getReader()
+    let done = false
+    let decoder = new TextDecoder()
+    while(!done){
+      const result = await reader?.read()
+      if(!result){
+        return
+      }
+      done = result.done
+      const chunk =decoder.decode(result?.value)
+      console.log(chunk)
+    }
+    setMessageText("")
+  }
   return (
     <div
       className="
@@ -31,11 +64,16 @@ export default function ChatInput() {
             className="flex-1 outline-none max-h-64 mb-1.5 bg-transparent text-black dark:text-white resize-none border-0"
             placeholder="输入一条消息"
             rows={1}
+            value={messageText}
+            onChange={(e) => {
+              setMessageText(e.target.value)
+            }}
           />
             <Button
               className="mx-3 !rounded-lg !text-gray-400 dark:!text-gray-300"
               icon={FiSend}
               variant="primary"
+              onClick={send}
             />
         </div>
         <footer className="text-center text-sm text-gray-700 dark:text-gray-300 px-4 pb-6">

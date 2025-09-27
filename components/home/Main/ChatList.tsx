@@ -36,11 +36,11 @@ export default function ChatList () {
                 return <li key = {item.id} className={`
                     ${isUser ? 
                         "bg-white dark:bg-gray-800"
-                        : "bg-gray-50 dark:bg-gray-700"
+                        : "bg-gray-100 dark:bg-gray-700"
                     }
                 `}>
                     <div className="w-full  max-w-7xl mx-auto flex space-x-10 px-6 py-6 text-lg">
-                        <div className="text-4xl leading-[1]">
+                        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg text-5xl leading-[1]">
                             {
                                 isUser? "🙂" : <PiOpenAiLogo />
                             }
