@@ -5,6 +5,13 @@
         position: relative;
         max-width: none;
     }
+    .markdown p,
+    .markdown li,
+    .markdown td,
+    .markdown th {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
     .markdown h1,
     .markdown h2 {
         font-weight: 600;

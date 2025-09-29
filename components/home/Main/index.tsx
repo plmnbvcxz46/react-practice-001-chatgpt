@@ -1,6 +1,5 @@
 import ChatInput from "./ChatInput"
 import ChatList from "./ChatList"
-import Example from "./Example"
 import Menu from "./Menu"
 import { Welcome } from "./Welcome"
 

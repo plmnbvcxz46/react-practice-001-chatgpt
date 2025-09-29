@@ -1,32 +1,55 @@
+import { Message } from "@/types/chat"
 
  export type State ={
   displayNavigation: boolean,
   themeMode: "dark" | "light",
   currentModel: string
+  messageList: Message[]
  }
 
  export enum ActionType {
-  UPDATE = "UPDATE"
+  UPDATE = "UPDATE",
+  ADD_MESSAGE = "ADD_MESSAGE",
+  UPDATE_MESSAGE = "UPDATE_MESSAGE"
  }
 
- type UpdateAction<K extends keyof State = keyof State> = {
+type MessageAction = {
+  type: ActionType.ADD_MESSAGE | ActionType.UPDATE_MESSAGE
+  message: Message
+}
+
+type UpdateAction = {
   type: ActionType.UPDATE
-  field: K
-  value: State[K]
- }
+  field: string
+  value: any
+}
 
- export type Action = UpdateAction
+export type Action = UpdateAction | MessageAction
 
- export const initState: State = {
+export const initState: State = {
   displayNavigation: true,
   themeMode: "light",
-  currentModel: "gpt-3.5"
- }
+  currentModel: "gpt-3.5",
+  messageList: []
+}
 
- export function reducer(state: State, action: Action): State {
+export function reducer(state: State, action: Action): State {
   switch (action.type) {
     case ActionType.UPDATE:
       return { ...state, [action.field]: action.value}
+    case ActionType.ADD_MESSAGE: {
+      const messageList = state.messageList.concat([action.message])
+      return { ...state, messageList}
+    }
+    case ActionType.UPDATE_MESSAGE: {
+      const messageList = state.messageList.map((message)=>{
+        if(message.id === action.message.id) {
+          return action.message
+        }
+        return message
+      })
+      return { ...state, messageList }
+    }
     default: throw new Error()
   }
- }
+}

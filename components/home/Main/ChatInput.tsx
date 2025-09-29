@@ -1,19 +1,34 @@
+import { useAppContext } from "@/components/AppContext";
 import Button from "@/components/common/Button";
-import { useState } from "react";
+import { ActionType } from "@/reducer/AppReducer";
+import { Message, MessageRequestBody } from "@/types/chat";
+import { useReducer, useState } from "react";
 import { FiSend } from "react-icons/fi";
 import { MdRefresh } from "react-icons/md";
 import { PiLightningFill } from "react-icons/pi";
 import TestareaAutoSize from "react-textarea-autosize";
+import { v4 as uuidv4 } from "uuid";
 export default function ChatInput() {
   const [messageText, setMessageText] = useState("")
+  const {
+    state: {messageList, currentModel}, dispatch
+  } = useAppContext()
   async function send() {
-    const body = JSON.stringify({messageText})
+    const message: Message = {
+      id: uuidv4(),
+      role: "user",
+      content: messageText
+    }
+    const messages = messageList.concat([message])
+    const body: MessageRequestBody = {messages, model: currentModel}
+    dispatch({type: ActionType.ADD_MESSAGE, message})
+    setMessageText("")
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body
+      body: JSON.stringify(body)
     })
     if (!response.ok) {
       console.log(response.statusText)
@@ -23,14 +38,25 @@ export default function ChatInput() {
       console.log("body error")
       return
     }
+    const responseMessage: Message = {
+      id: uuidv4(),
+      role: "assistant",
+      content: ""
+    }
+    dispatch({type: ActionType.ADD_MESSAGE, message: responseMessage})
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let done = false
+    let content = ""
     while (!done) {
       const result = await reader.read()
       done = result.done
       const chunk = decoder.decode(result.value)
       console.log(chunk)
+      content += chunk
+      dispatch( {type: ActionType.UPDATE_MESSAGE,
+         message: {...responseMessage, content}
+        })
     }
     setMessageText("")
   }
@@ -47,17 +73,17 @@ export default function ChatInput() {
         <Button
           icon={MdRefresh}
           variant="primary"
-          className="font-medium bg-gray-50 dark:bg-gray-600 !text-gray-400 dark:!text-gray-200"
+          className="font-medium bg-emerald-600 !text-gray-400 dark:!text-gray-200"
         >
           重新生成
         </Button>
 
         <div className="flex items-end w-full border border-black/10 dark:border-gray-800/50 bg-white dark:bg-gray-700 rounded-lg shadow-[0_0_15px_rgba(0,0,0,0.1)] py-4">
-          <div className="mx-3 mb-2.5 text-gray-500 dark:text-gray-300">
+          <div className={`mx-3 mb-2.5 text-gray-500 dark:text-gray-300 ${messageText != "" ? "!text-[#26cf8e]" : ""}`}>
             <PiLightningFill />
           </div>
           <TestareaAutoSize
-            className="flex-1 outline-none max-h-64 mb-1.5 bg-transparent text-black dark:text-white resize-none border-0"
+            className={"flex-1 outline-none max-h-64 mb-1.5 bg-transparent text-black dark:text-white resize-none border-0 "}
             placeholder="输入一条消息"
             rows={1}
             value={messageText}
@@ -66,7 +92,7 @@ export default function ChatInput() {
             }}
           />
             <Button
-              className="mx-3 !rounded-lg !text-gray-400 dark:!text-gray-300"
+              className={`mx-3 !rounded-lg !text-gray-400 dark:!text-gray-300 ${messageText != "" ? "bg-emerald-600" : ""}`}
               icon={FiSend}
               variant="primary"
               onClick={send}
