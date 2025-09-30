@@ -5,7 +5,7 @@ import { useAppContext } from "@/components/AppContext"
 
 export default function ChatList () {
 	const {
-		state: {messageList}
+		state: {messageList, streamingId}
 	} = useAppContext()
 
 	return (<div className="w-full pt-10 pb-60 dark:text-gray-300">
@@ -26,7 +26,9 @@ export default function ChatList () {
 											}
 									</div>
 								<div className="flex-1 min-w-0">
-										<Markdown className="markdown break-words whitespace-pre-wrap">{item.content}</Markdown>
+										<Markdown className="markdown break-words whitespace-pre-wrap">
+											{`${item.content}${streamingId === item.id ? "▍" : ""}`}
+										</Markdown>
 									</div>
 								</div>
 						</li>

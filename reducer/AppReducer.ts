@@ -5,6 +5,7 @@ import { Message } from "@/types/chat"
   themeMode: "dark" | "light",
   currentModel: string
   messageList: Message[]
+  streamingId: string
  }
 
  export enum ActionType {
@@ -30,7 +31,8 @@ export const initState: State = {
   displayNavigation: true,
   themeMode: "light",
   currentModel: "gpt-3.5",
-  messageList: []
+  messageList: [],
+  streamingId: ""
 }
 
 export function reducer(state: State, action: Action): State {

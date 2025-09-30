@@ -5,13 +5,13 @@ import { Message, MessageRequestBody } from "@/types/chat";
 import { useReducer, useState } from "react";
 import { FiSend } from "react-icons/fi";
 import { MdRefresh } from "react-icons/md";
-import { PiLightningFill } from "react-icons/pi";
+import { PiLightningFill, PiStopBold, PiStopThin } from "react-icons/pi";
 import TestareaAutoSize from "react-textarea-autosize";
 import { v4 as uuidv4 } from "uuid";
 export default function ChatInput() {
   const [messageText, setMessageText] = useState("")
   const {
-    state: {messageList, currentModel}, dispatch
+    state: {messageList, currentModel, streamingId}, dispatch
   } = useAppContext()
   async function send() {
     const message: Message = {
@@ -44,6 +44,11 @@ export default function ChatInput() {
       content: ""
     }
     dispatch({type: ActionType.ADD_MESSAGE, message: responseMessage})
+    dispatch({
+      type:ActionType.UPDATE,
+      field:"streamingId", 
+      value: responseMessage.id
+    })
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let done = false
@@ -59,6 +64,11 @@ export default function ChatInput() {
         })
     }
     setMessageText("")
+    dispatch({
+      type:ActionType.UPDATE,
+      field:"streamingId", 
+      value: ""
+    })
   }
   return (
     <div
@@ -70,16 +80,28 @@ export default function ChatInput() {
       "
     >
       <div className="w-full mx-auto flex max-w-4xl flex-col items-center space-y-4 p-4">
-        <Button
-          icon={MdRefresh}
-          variant="primary"
-          className="font-medium bg-emerald-600 !text-gray-400 dark:!text-gray-200"
-        >
-          重新生成
-        </Button>
+        {
+          messageList.length !== 0 && (
+            streamingId === "" ?(
+          <Button
+            icon={MdRefresh}
+            variant="primary"
+            className="font-medium bg-[#26cf8e] hover:bg-[#1b9969]"
+          >
+            重新生成
+          </Button>
+          ) : 
+          <Button
+            icon={PiStopBold}
+            variant="primary"
+            className="font-medium bg-[#26cf8e] hover:bg-[#1b9969]"
+          >
+            停止生成
+          </Button>
+        )}
 
         <div className="flex items-end w-full border border-black/10 dark:border-gray-800/50 bg-white dark:bg-gray-700 rounded-lg shadow-[0_0_15px_rgba(0,0,0,0.1)] py-4">
-          <div className={`mx-3 mb-2.5 text-gray-500 dark:text-gray-300 ${messageText != "" ? "!text-[#26cf8e]" : ""}`}>
+          <div className={`mx-3 mb-2.5 dark:text-gray-300 text-[#26cf8e]`}>
             <PiLightningFill />
           </div>
           <TestareaAutoSize
@@ -92,10 +114,11 @@ export default function ChatInput() {
             }}
           />
             <Button
-              className={`mx-3 !rounded-lg !text-gray-400 dark:!text-gray-300 ${messageText != "" ? "bg-emerald-600" : ""}`}
+              className={`mx-3 !rounded-lg bg-[#26cf8e] disabled:bg-gray-300`}
               icon={FiSend}
               variant="primary"
               onClick={send}
+              disabled = { messageText.trim() === "" || streamingId != ""}
             />
         </div>
         <footer className="text-center text-sm text-gray-700 dark:text-gray-300 px-4 pb-6">
