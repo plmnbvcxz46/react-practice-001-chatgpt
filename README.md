@@ -11,3 +11,5 @@ type是类型别名，主要用于解释，类似抽象类或者接口？
 还要看下stream api和数据流的内容，异步实现的相关内容，promise
 
 ts 里的枚举类型， enum
+
+仔细看一下response还有fetch方法相关的内容

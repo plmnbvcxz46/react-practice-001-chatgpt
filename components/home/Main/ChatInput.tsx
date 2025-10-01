@@ -2,7 +2,7 @@ import { useAppContext } from "@/components/AppContext";
 import Button from "@/components/common/Button";
 import { ActionType } from "@/reducer/AppReducer";
 import { Message, MessageRequestBody } from "@/types/chat";
-import { useReducer, useState } from "react";
+import { useReducer, useRef, useState } from "react";
 import { FiSend } from "react-icons/fi";
 import { MdRefresh } from "react-icons/md";
 import { PiLightningFill, PiStopBold, PiStopThin } from "react-icons/pi";
@@ -10,24 +10,43 @@ import TestareaAutoSize from "react-textarea-autosize";
 import { v4 as uuidv4 } from "uuid";
 export default function ChatInput() {
   const [messageText, setMessageText] = useState("")
+  const stopRef = useRef(false)
   const {
     state: {messageList, currentModel, streamingId}, dispatch
   } = useAppContext()
-  async function send() {
+  async function send(){
     const message: Message = {
       id: uuidv4(),
       role: "user",
       content: messageText
     }
-    const messages = messageList.concat([message])
-    const body: MessageRequestBody = {messages, model: currentModel}
     dispatch({type: ActionType.ADD_MESSAGE, message})
+    const messages = messageList.concat([message])
+    doSend(messages)
+  }
+  async function resend() {
+    const messages = [...messageList]
+    if(messages.length !== 0 && messages[messages.length-1].role === "assistant"){
+      dispatch({
+        type: ActionType.REMOVE_MESSAGE,
+        message: messages[messages.length -1 ]
+      })
+      messages.splice(messages.length -1 , 1)
+      doSend(messages)
+    }
+    
+  }
+  async function doSend(messages: Message[]) {
+    
+    const body: MessageRequestBody = {messages, model: currentModel}
     setMessageText("")
+    const controller = new AbortController()
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
+      signal: controller.signal, 
       body: JSON.stringify(body)
     })
     if (!response.ok) {
@@ -54,6 +73,11 @@ export default function ChatInput() {
     let done = false
     let content = ""
     while (!done) {
+      if(stopRef.current) {
+        stopRef.current = false
+        controller.abort()
+        break
+      }
       const result = await reader.read()
       done = result.done
       const chunk = decoder.decode(result.value)
@@ -86,6 +110,7 @@ export default function ChatInput() {
           <Button
             icon={MdRefresh}
             variant="primary"
+            onClick={resend}
             className="font-medium bg-[#26cf8e] hover:bg-[#1b9969]"
           >
             重新生成
@@ -94,6 +119,9 @@ export default function ChatInput() {
           <Button
             icon={PiStopBold}
             variant="primary"
+            onClick={()=>{
+              stopRef.current = true
+            }}
             className="font-medium bg-[#26cf8e] hover:bg-[#1b9969]"
           >
             停止生成
