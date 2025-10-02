@@ -9,17 +9,34 @@ import { PiLightningFill, PiStopBold, PiStopThin } from "react-icons/pi";
 import TestareaAutoSize from "react-textarea-autosize";
 import { v4 as uuidv4 } from "uuid";
 export default function ChatInput() {
-  const [messageText, setMessageText] = useState("")
-  const stopRef = useRef(false)
-  const {
-    state: {messageList, currentModel, streamingId}, dispatch
-  } = useAppContext()
-  async function send(){
-    const message: Message = {
-      id: uuidv4(),
-      role: "user",
-      content: messageText
+const [messageText, setMessageText] = useState("")
+const stopRef = useRef(false)
+const {
+  state: {messageList, currentModel, streamingId}, dispatch
+} = useAppContext()
+async function createOrUpdateMessage(message:Message) {
+    const response = await fetch("/api/message/update", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(message)
+    })
+    if (!response.ok) {
+      console.log(response.statusText)
+      return
     }
+    const { data } = await response.json()
+    return data.message
+    
+  }
+  async function send(){
+    const message = await createOrUpdateMessage({
+      id: "",
+      role: "user",
+      content: messageText,
+      chatId: ""
+    })
     dispatch({type: ActionType.ADD_MESSAGE, message})
     const messages = messageList.concat([message])
     doSend(messages)
@@ -60,7 +77,8 @@ export default function ChatInput() {
     const responseMessage: Message = {
       id: uuidv4(),
       role: "assistant",
-      content: ""
+      content: "",
+      chatId: ""
     }
     dispatch({type: ActionType.ADD_MESSAGE, message: responseMessage})
     dispatch({
