@@ -4,10 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest){
   const body = await request.json()
   const { id, ... data} = body
-  if (!data.chaId){
+  if (!data.chatId){
     const chat = await prisma.chat.create({
       data: {
-        title: "new chat"
+        title: "新对话"
       }
     })
     data.chatId = chat.id

@@ -9,12 +9,14 @@ import { PiLightningFill, PiStopBold, PiStopThin } from "react-icons/pi";
 import TestareaAutoSize from "react-textarea-autosize";
 import { v4 as uuidv4 } from "uuid";
 export default function ChatInput() {
-const [messageText, setMessageText] = useState("")
-const stopRef = useRef(false)
-const {
-  state: {messageList, currentModel, streamingId}, dispatch
-} = useAppContext()
-async function createOrUpdateMessage(message:Message) {
+  const [messageText, setMessageText] = useState("")
+  const stopRef = useRef(false)
+  const chatIdRef = useRef("")
+  const {
+    state: {messageList, currentModel, streamingId}, dispatch
+  } = useAppContext()
+
+  async function createOrUpdateMessage(message:Message) {
     const response = await fetch("/api/message/update", {
       method: "POST",
       headers: {
@@ -27,7 +29,25 @@ async function createOrUpdateMessage(message:Message) {
       return
     }
     const { data } = await response.json()
+    if(!chatIdRef.current){
+      chatIdRef.current = data.message.chatId
+    }
     return data.message
+    
+  }
+  async function deleteMessage(id: string) {
+    const response = await fetch(`/api/message/delete?id=${id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+    if (!response.ok) {
+      console.log(response.statusText)
+      return
+    }
+    const { code } = await response.json()
+    return code === 0
     
   }
   async function send(){
@@ -35,7 +55,7 @@ async function createOrUpdateMessage(message:Message) {
       id: "",
       role: "user",
       content: messageText,
-      chatId: ""
+      chatId: chatIdRef.current
     })
     dispatch({type: ActionType.ADD_MESSAGE, message})
     const messages = messageList.concat([message])
@@ -43,12 +63,20 @@ async function createOrUpdateMessage(message:Message) {
   }
   async function resend() {
     const messages = [...messageList]
-    if(messages.length !== 0 && messages[messages.length-1].role === "assistant"){
+    if(
+      messages.length !== 0 && messages[messages.length-1].role === "assistant"
+    ){
+      const result = await deleteMessage(messages[messages.length-1].id)
+      if(!result){
+        console.log("delete error")
+        return 
+      }
       dispatch({
         type: ActionType.REMOVE_MESSAGE,
         message: messages[messages.length -1 ]
       })
       messages.splice(messages.length -1 , 1)
+      
       doSend(messages)
     }
     
@@ -74,12 +102,12 @@ async function createOrUpdateMessage(message:Message) {
       console.log("body error")
       return
     }
-    const responseMessage: Message = {
-      id: uuidv4(),
+    const responseMessage:Message = await createOrUpdateMessage({
+      id: "",
       role: "assistant",
       content: "",
-      chatId: ""
-    }
+      chatId: chatIdRef.current
+    })
     dispatch({type: ActionType.ADD_MESSAGE, message: responseMessage})
     dispatch({
       type:ActionType.UPDATE,
@@ -105,7 +133,9 @@ async function createOrUpdateMessage(message:Message) {
          message: {...responseMessage, content}
         })
     }
-    setMessageText("")
+    createOrUpdateMessage({
+      ...responseMessage, content
+    })
     dispatch({
       type:ActionType.UPDATE,
       field:"streamingId", 
