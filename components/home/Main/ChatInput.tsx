@@ -1,13 +1,13 @@
 import { useAppContext } from "@/components/AppContext";
 import Button from "@/components/common/Button";
+import { useEventBusContext } from "@/components/EventBusContext";
 import { ActionType } from "@/reducer/AppReducer";
 import { Message, MessageRequestBody } from "@/types/chat";
-import { useReducer, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { FiSend } from "react-icons/fi";
 import { MdRefresh } from "react-icons/md";
-import { PiLightningFill, PiStopBold, PiStopThin } from "react-icons/pi";
+import { PiLightningFill, PiStopBold } from "react-icons/pi";
 import TestareaAutoSize from "react-textarea-autosize";
-import { v4 as uuidv4 } from "uuid";
 export default function ChatInput() {
   const [messageText, setMessageText] = useState("")
   const stopRef = useRef(false)
@@ -15,6 +15,8 @@ export default function ChatInput() {
   const {
     state: {messageList, currentModel, streamingId}, dispatch
   } = useAppContext()
+
+  const {publish} = useEventBusContext()
 
   async function createOrUpdateMessage(message:Message) {
     const response = await fetch("/api/message/update", {
@@ -31,6 +33,7 @@ export default function ChatInput() {
     const { data } = await response.json()
     if(!chatIdRef.current){
       chatIdRef.current = data.message.chatId
+      publish("fetchchatlist")
     }
     return data.message
     
@@ -127,7 +130,6 @@ export default function ChatInput() {
       const result = await reader.read()
       done = result.done
       const chunk = decoder.decode(result.value)
-      console.log(chunk)
       content += chunk
       dispatch( {type: ActionType.UPDATE_MESSAGE,
          message: {...responseMessage, content}

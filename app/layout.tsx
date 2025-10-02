@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import "@/styles/markdown.css"
 import AppContextProvider from "@/components/AppContext";
+import EventBusContextProvider from "@/components/EventBusContext";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -29,7 +30,9 @@ export default function RootLayout({
         className={`antialiased`}
       >
         <AppContextProvider>
-          {children}
+          <EventBusContextProvider>
+            {children}
+          </EventBusContextProvider>
         </AppContextProvider>
       </body>
     </html>
