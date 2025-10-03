@@ -1,4 +1,5 @@
 import { Message } from "@/types/chat"
+import { Chat } from "@prisma/client"
 
  export type State ={
   displayNavigation: boolean,
@@ -6,6 +7,7 @@ import { Message } from "@/types/chat"
   currentModel: string
   messageList: Message[]
   streamingId: string
+  selectedChat?: Chat
  }
 
  export enum ActionType {

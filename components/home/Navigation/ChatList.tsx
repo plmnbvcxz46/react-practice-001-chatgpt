@@ -5,11 +5,16 @@ import { MdCheck, MdClose, MdDeleteOutline } from "react-icons/md"
 import { PiChatBold, PiTrashBold } from "react-icons/pi"
 import { groupByDate } from "@/common/util"
 import { useEventBusContext } from "@/components/EventBusContext"
+import { useAppContext } from "@/components/AppContext"
+import { ActionType } from "@/reducer/AppReducer"
 
 export default function ChatList(){
   const [chatlist, setChatList] = useState<Chat[]>([])
   const pageRef = useRef(1)
-  const [selectedChat, setselectedChat] = useState<Chat | undefined>()
+  const {
+    state: {selectedChat},
+    dispatch
+  } = useAppContext()
   const groupList = useMemo(()=>{
     return groupByDate(chatlist)
   },[chatlist])
@@ -54,9 +59,12 @@ export default function ChatList(){
                   const selected = item.id === selectedChat ?.id 
                   return (
                   <li
-                    onClick={(() =>
-                      setselectedChat(()=>(selected ? undefined : item))
-                    )}
+                    onClick={() => {
+                      dispatch({ 
+                        type: ActionType.UPDATE, 
+                        field: "selectedChat", 
+                        value: item })
+                    }}
                     key={item.id} className={`group rounded-md hover:bg-gray-800 flex items-center space-x-3 cursor-pointer p-3 ${
                       selected ? "bg-gray-800" : ""
                     }`}

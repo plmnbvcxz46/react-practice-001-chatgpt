@@ -1,10 +1,13 @@
 import { Chat } from "@/types/chat"
-import { resolve } from "path"
 
 export function groupByDate(chatList: Chat[]) {
+    const sortedList = [...chatList].sort(
+        (a, b) =>
+            new Date(b.updateTime).getTime() - new Date(a.updateTime).getTime()
+    )
     const groupMap = new Map<string, Chat[]>()
-    chatList.forEach((item) => {
-        const now = new Date()
+    const now = new Date()
+    sortedList.forEach((item) => {
         const updateTime = new Date(item.updateTime)
         let key = "未知时间"
         const dayDiff = Math.floor(
@@ -21,22 +24,14 @@ export function groupByDate(chatList: Chat[]) {
         } else {
             key = `${updateTime.getFullYear()}`
         }
-        if (groupMap.has(key)) {
-            groupMap.get(key)?.push(item)
+        const list = groupMap.get(key)
+        if (list) {
+            list.push(item)
         } else {
             groupMap.set(key, [item])
         }
     })
-    groupMap.forEach((item) => {
-        item.sort((a, b) => new Date(a.updateTime).getTime() - new Date(b.updateTime).getTime())
-    })
-    const groupList = Array.from(groupMap).sort(([, list1], [, list2]) => {
-        return (
-            new Date(list1[list1.length - 1].updateTime).getTime() -
-            new Date(list2[list2.length - 1].updateTime).getTime()
-        )
-    })
-    return groupList
+    return Array.from(groupMap.entries())
 }
 
 export function sleep(time: number){
