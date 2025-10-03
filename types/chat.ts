@@ -1,7 +1,7 @@
 export interface Chat{
   id: string
   title: string
-  uptime: number
+  updateTime: Date
 }
 
 export interface Message{

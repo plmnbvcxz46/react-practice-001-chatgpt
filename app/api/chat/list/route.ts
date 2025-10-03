@@ -12,6 +12,6 @@ export async function GET(request: NextRequest) {
       updateTime: "desc"
     }
   })
-  return NextResponse.json( {code: 0, data: ( list )})
+  return NextResponse.json({code: 0, data: {list}})
   
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Chat } from "@/types/chat"
 import { AiOutlineEdit } from "react-icons/ai"
 import { MdCheck, MdClose, MdDeleteOutline } from "react-icons/md"
@@ -7,40 +7,35 @@ import { groupByDate } from "@/common/util"
 import { useEventBusContext } from "@/components/EventBusContext"
 
 export default function ChatList(){
-  const [chatlist, setchatlist] = useState<Chat[]>([
-    { id: "1", title: "1first first first first first first first", uptime: Date.now() + 0 },
-    { id: "2", title: "1first first first first first first first", uptime: Date.now() + 0 },
-    { id: "3", title: "1first first first first first first first", uptime: Date.now() + 0 },
-    { id: "4", title: "1first first first first first first first", uptime: Date.now() + 0 },
-    { id: "5", title: "1first first first first first first first", uptime: Date.now() + 0 },
-    { id: "6", title: "1first first first first first first first", uptime: Date.now() + 0 },
-    { id: "7", title: "2second second second second second second second second", uptime: Date.now() + 1 },
-    { id: "8", title: "3third third third third third third third third third third third third", uptime: Date.now() + 2 },
-    { id: "9", title: "4fourth: discuss project plan and milestones", uptime: Date.now() + 3 },
-    { id: "10", title: "5sixteenth: security audit follow-up", uptime: Date.now() + 15 },
-    { id: "11", title: "6seventeenth: dependency upgrades", uptime: Date.now() + 16 },
-    { id: "12", title: "7eighteenth: localization tasks", uptime: Date.now() + 17 },
-    { id: "13", title: "8nineteenth: analytics and tracking", uptime: Date.now() + 18 },
-    { id: "14", title: "9twentieth: roadmap planning and Q&A", uptime: Date.now() + 19 },
-    { id: "15", title: "1first first first first first first first", uptime: Date.now() + 0 },
-    { id: "16", title: "2second second second second second second second second", uptime: Date.now() + 1 },
-    { id: "17", title: "3third third third third third third third third third third third third", uptime: Date.now() + 2 },
-    { id: "18", title: "4fourth: discuss project plan and milestones", uptime: Date.now() + 3 },
-    { id: "19", title: "5sixteenth: security audit follow-up", uptime: Date.now() + 15 },
-    { id: "20", title: "6seventeenth: dependency upgrades", uptime: Date.now() + 16 },
-    { id: "21", title: "7eighteenth: localization tasks", uptime: Date.now() + 17 },
-    { id: "22", title: "8nineteenth: analytics and tracking", uptime: Date.now() + 18 },
-    { id: "23", title: "9twentieth: roadmap planning and Q&A", uptime: Date.now() + 19 }
-  ])
+  const [chatlist, setChatList] = useState<Chat[]>([])
+  const pageRef = useRef(1)
   const [selectedChat, setselectedChat] = useState<Chat | undefined>()
   const groupList = useMemo(()=>{
     return groupByDate(chatlist)
   },[chatlist])
   const {subscribe, unsubscribe} = useEventBusContext()
-
+  async function getData() {
+    const response = await fetch(`/api/chat/list?page=${pageRef.current}`, {
+      method:"GET"
+    })
+    if(!response.ok){
+      console.log(response.statusText)
+      return
+    }
+    const {data} = await response.json()
+    if (pageRef.current === 1){
+      setChatList(data.list)
+    }else {
+      setChatList((list)=> list.concat(data.list))
+    }
+  }
+  useEffect(()=>{
+    getData()
+  },[])
   useEffect(() => {
     const callback: EventListener = () => {
-      console.log("fetchchatlist")
+      pageRef.current =1
+      getData()
     }
     subscribe("fetchchatlist", callback)
     return () => unsubscribe("fetchchatlist", callback)
