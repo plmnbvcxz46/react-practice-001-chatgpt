@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Chat } from "@/types/chat"
-import { AiOutlineEdit } from "react-icons/ai"
-import { MdCheck, MdClose, MdDeleteOutline } from "react-icons/md"
-import { PiChatBold, PiTrashBold } from "react-icons/pi"
 import { groupByDate } from "@/common/util"
-import { useEventBusContext } from "@/components/EventBusContext"
+import ChatItem from "./ChatItem"
+import { EventListener, useEventBusContext } from "@/components/EventBusContext"
 import { useAppContext } from "@/components/AppContext"
 import { ActionType } from "@/reducer/AppReducer"
 
@@ -56,30 +54,21 @@ export default function ChatList(){
             <ul>
               {
                 list.map((item)=>{
-                  const selected = item.id === selectedChat ?.id 
+                  const selected = item.id === selectedChat?.id 
                   return (
-                  <li
-                    onClick={() => {
-                      dispatch({ 
-                        type: ActionType.UPDATE, 
-                        field: "selectedChat", 
-                        value: item })
-                    }}
-                    key={item.id} className={`group rounded-md hover:bg-gray-800 flex items-center space-x-3 cursor-pointer p-3 ${
-                      selected ? "bg-gray-800" : ""
-                    }`}
-                  >
-                    <div>
-                      <PiChatBold />
-                    </div>
-                    <div className="relative flex-1 whitespace-nowrap overflow-hidden">
-                      {item.title}
-                      <span className={`group-hover:from-gray-800 absolute right-0 inset-y-0 w-8 bg-gradient-to-l ${
-                        selected ? "from-gray-800" : "from-gray-900"
-                      }`}></span>
-                    </div>
-
-                  </li>)}
+                    <ChatItem
+                      key={item.id}
+                      item={item}
+                      selected={selected}
+                      onSelected={(chat) => {
+                        dispatch({
+                          type: ActionType.UPDATE,
+                          field: "selectedChat",
+                          value: chat
+                        })
+                      }}
+                    />
+                  )}
                 )
               }
             </ul>

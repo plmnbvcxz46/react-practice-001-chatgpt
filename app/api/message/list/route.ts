@@ -1,6 +1,5 @@
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { skip } from "node:test";
 
 export async function GET(request: NextRequest) {
   const chatId = request.nextUrl.searchParams.get("chatId")
@@ -12,7 +11,7 @@ export async function GET(request: NextRequest) {
       chatId
     },
     orderBy: {
-      createTime: "desc"
+      createTime: "asc"
     }
   })
   return NextResponse.json({code: 0, data: {list}})

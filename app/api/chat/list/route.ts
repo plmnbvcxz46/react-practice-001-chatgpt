@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     skip: (page-1)*20,
     take: 20,
     orderBy: {
-      updateTime: "desc"
+      updateTime: "asc"
     }
   })
   return NextResponse.json({code: 0, data: {list}})
