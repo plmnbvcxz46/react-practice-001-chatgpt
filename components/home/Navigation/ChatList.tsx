@@ -17,6 +17,9 @@ export default function ChatList(){
     return groupByDate(chatlist)
   },[chatlist])
   const {subscribe, unsubscribe} = useEventBusContext()
+
+  const loadMoreRef = useRef(null)
+
   async function getData() {
     const response = await fetch(`/api/chat/list?page=${pageRef.current}`, {
       method:"GET"
@@ -43,6 +46,17 @@ export default function ChatList(){
     subscribe("fetchchatlist", callback)
     return () => unsubscribe("fetchchatlist", callback)
   }, [])
+
+  useEffect(()=>{
+    let obseve: IntersectionObserver | null = null
+    let div = loadMoreRef.current
+    if(div){
+      observer = new IntersectionObserver((entries) => {
+        if()
+      })
+    }
+  },[])
+
   return (
     <div className="flex-1 flex mt-2 mb-[48px] flex-col overflow-y-auto">{
       groupList.map(([Date,list])=>{
@@ -76,7 +90,7 @@ export default function ChatList(){
         )
       })
     }
-      
+    <div ref={loadMoreRef}>$nbsp;</div>
     </div>
   )
 }
