@@ -69,11 +69,19 @@ export default function ChatInput() {
     if(!chatIdRef.current){
       chatIdRef.current = data.message.chatId
       publish("fetchchatlist")
-      dispatch({
-        type: ActionType.UPDATE,
-        field: "selectedChat",
-        value: {id:chatIdRef.current}
-      })
+      // 获取完整的聊天对象（包含title）
+      const chatResponse = await fetch(`/api/chat/list?page=1`)
+      if(chatResponse.ok) {
+        const { data: chatData } = await chatResponse.json()
+        const newChat = chatData.list.find((c: any) => c.id === chatIdRef.current)
+        if(newChat) {
+          dispatch({
+            type: ActionType.UPDATE,
+            field: "selectedChat",
+            value: newChat
+          })
+        }
+      }
     }
     return data.message
     
@@ -106,6 +114,14 @@ export default function ChatInput() {
     dispatch({type: ActionType.ADD_MESSAGE, message})
     const messages = [message]
     doSend(messages)
+    
+    // 使用 prompt 生成标题（这是第一条消息）
+    // 使用更长的延迟确保 selectedChat 已更新
+    setTimeout(() => {
+      console.log("sendWithPrompt - 检测标题, chatId:", chatIdRef.current, "selectedChat:", selectedChat)
+      // 直接使用 chatIdRef.current，因为这是新对话
+      generateChatTitle(message.content, chatIdRef.current)
+    }, 1000)
   }
   
   async function send(){
@@ -121,6 +137,81 @@ export default function ChatInput() {
     dispatch({type: ActionType.ADD_MESSAGE, message})
     const messages = messageList.concat([message])
     doSend(messages)
+    
+    // 只在发送第一条消息时生成标题
+    if(messageList.length === 0) {
+      setTimeout(() => {
+        console.log("send - 检测标题, chatId:", chatIdRef.current, "selectedChat:", selectedChat)
+        generateChatTitle(message.content, chatIdRef.current)
+      }, 1000)
+    }
+  }
+  
+  async function generateChatTitle(userMessage: string, chatId: string) {
+    try {
+      console.log("开始生成标题，chatId:", chatId, "用户消息:", userMessage.substring(0, 50))
+      
+      const body: MessageRequestBody = {
+        messages: [{
+          id: "",
+          role: "user",
+          content: `使用 5 到 10 个字直接返回这句话的简要主题，不要解释、不要标点、不要语气词、不要多余文本，如果没有主题，请直接返回'新对话'\n\n${userMessage}`,
+          chatId: ""
+        }],
+        model: currentModel
+      }
+      
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      })
+      
+      if (!response.ok || !response.body) {
+        console.log("生成标题失败")
+        return
+      }
+      
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let done = false
+      let title = ""
+      
+      while (!done) {
+        const result = await reader.read()
+        done = result.done
+        const chunk = decoder.decode(result.value)
+        title += chunk
+      }
+      
+      console.log("生成的标题:", title.trim())
+      
+      // 更新聊天标题
+      if(title.trim()) {
+        const updateResponse = await fetch("/api/chat/update", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            id: chatId,
+            title: title.trim()
+          })
+        })
+        
+        if(updateResponse.ok) {
+          console.log("标题更新成功")
+          // 更新本地状态
+          publish("fetchchatlist")
+        } else {
+          console.log("标题更新失败:", updateResponse.statusText)
+        }
+      }
+    } catch (error) {
+      console.error("生成标题出错:", error)
+    }
   }
   async function resend() {
     const messages = [...messageList]
