@@ -13,8 +13,8 @@ export default function Example(){
     }
   }, [showFull])
   return(
-    <div className="mb-40 mt-auto">
-        <div className="flex justify-center mt-20 mb-4 text-4xl">
+    <div className="mt-8">
+        <div className="flex justify-center mt-8 mb-4 text-4xl">
           <MdOutlineTipsAndUpdates />
         </div>
         <ul className="flex justify-center flex-wrap gap-3.5 p-1.5">
