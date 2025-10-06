@@ -36,34 +36,44 @@ export default function EventBusContextProvider({
 
     const subscribe = useCallback(
         (event: string, callback: EventListener) => {
-            if (!listeners[event]) {
-                listeners[event] = []
-            }
-            listeners[event].push(callback)
-            setListeners({ ...listeners })
+            setListeners((prevListeners) => {
+                const newListeners = { ...prevListeners }
+                if (!newListeners[event]) {
+                    newListeners[event] = []
+                }
+                newListeners[event].push(callback)
+                return newListeners
+            })
         },
-        [listeners]
+        []
     )
 
     const unsubscribe = useCallback(
         (event: string, callback: EventListener) => {
-            if (listeners[event]) {
-                listeners[event] = listeners[event].filter(
-                    (cb) => cb !== callback
-                )
-                setListeners({ ...listeners })
-            }
+            setListeners((prevListeners) => {
+                if (prevListeners[event]) {
+                    const newListeners = { ...prevListeners }
+                    newListeners[event] = newListeners[event].filter(
+                        (cb) => cb !== callback
+                    )
+                    return newListeners
+                }
+                return prevListeners
+            })
         },
-        [listeners]
+        []
     )
 
     const publish = useCallback(
         (event: string, data?: any) => {
-            if (listeners[event]) {
-                listeners[event].forEach((callback) => callback(data))
-            }
+            setListeners((prevListeners) => {
+                if (prevListeners[event]) {
+                    prevListeners[event].forEach((callback) => callback(data))
+                }
+                return prevListeners
+            })
         },
-        [listeners]
+        []
     )
 
     const contextValue = useMemo(() => {

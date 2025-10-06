@@ -17,7 +17,7 @@ export default function ChatInput() {
     dispatch
   } = useAppContext()
 
-  const {publish} = useEventBusContext()
+  const {publish, subscribe, unsubscribe} = useEventBusContext()
 
 
   useEffect(() => {
@@ -27,6 +27,27 @@ export default function ChatInput() {
     chatIdRef.current = selectedChat?.id ?? ""
     stopRef.current = true
   }, [selectedChat])
+
+  useEffect(() => {
+    const handleNewChatWithPrompt = (prompt: string) => {
+      // 清空当前聊天ID，创建新对话
+      chatIdRef.current = ""
+      dispatch({type: ActionType.UPDATE, field: "messageList", value: []})
+      dispatch({type: ActionType.UPDATE, field: "selectedChat", value: null})
+      // 设置prompt文本并自动发送
+      setMessageText(prompt)
+      // 使用setTimeout确保状态更新后再发送
+      setTimeout(() => {
+        sendWithPrompt(prompt)
+      }, 100)
+    }
+    
+    subscribe("newChatWithPrompt", handleNewChatWithPrompt)
+    
+    return () => {
+      unsubscribe("newChatWithPrompt", handleNewChatWithPrompt)
+    }
+  }, [subscribe, unsubscribe, dispatch])
 
   async function createOrUpdateMessage(message:Message) {
     const response = await fetch("/api/message/update", {
@@ -72,6 +93,21 @@ export default function ChatInput() {
     return code === 0
     
   }
+  async function sendWithPrompt(prompt: string){
+    const message = await createOrUpdateMessage({
+      id: "",
+      role: "user",
+      content: prompt,
+      chatId: chatIdRef.current
+    })
+    if(!message){
+      return
+    }
+    dispatch({type: ActionType.ADD_MESSAGE, message})
+    const messages = [message]
+    doSend(messages)
+  }
+  
   async function send(){
     const message = await createOrUpdateMessage({
       id: "",
