@@ -3,7 +3,7 @@ import Button from "@/components/common/Button";
 import { useEventBusContext } from "@/components/EventBusContext";
 import { ActionType } from "@/reducer/AppReducer";
 import { Message, MessageRequestBody } from "@/types/chat";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FiSend } from "react-icons/fi";
 import { MdRefresh } from "react-icons/md";
 import { PiLightningFill, PiStopBold } from "react-icons/pi";
@@ -29,17 +29,78 @@ export default function ChatInput() {
   }, [selectedChat])
 
   useEffect(() => {
-    const handleNewChatWithPrompt = (prompt: string) => {
-      // 清空当前聊天ID，创建新对话
+    const handleNewChatWithPrompt = async (prompt: string) => {
+      console.log("=== Example 按钮点击 ===, prompt:", prompt.substring(0, 50))
+      
+      // 清空当前聊天ID,创建新对话
       chatIdRef.current = ""
       dispatch({type: ActionType.UPDATE, field: "messageList", value: []})
       dispatch({type: ActionType.UPDATE, field: "selectedChat", value: null})
-      // 设置prompt文本并自动发送
+      // 设置prompt文本
       setMessageText(prompt)
-      // 使用setTimeout确保状态更新后再发送
-      setTimeout(() => {
-        sendWithPrompt(prompt)
-      }, 100)
+      
+      // 等待状态更新
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // 1. 创建用户消息
+      const response = await fetch("/api/message/update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          id: "",
+          role: "user",
+          content: prompt,
+          chatId: chatIdRef.current
+        })
+      })
+      
+      if (!response.ok) {
+        console.log("创建消息失败:", response.statusText)
+        return
+      }
+      
+      const { data } = await response.json()
+      if(!data?.message){
+        console.log("message payload missing")
+        return
+      }
+      
+      const message = data.message
+      
+      // 更新 chatIdRef
+      if(!chatIdRef.current){
+        chatIdRef.current = message.chatId
+        console.log("新对话创建, chatId:", chatIdRef.current)
+        publish("fetchchatlist")
+        // 获取完整的聊天对象(包含title)
+        const chatResponse = await fetch(`/api/chat/list?page=1`)
+        if(chatResponse.ok) {
+          const { data: chatData } = await chatResponse.json()
+          const newChat = chatData.list.find((c: any) => c.id === chatIdRef.current)
+          if(newChat) {
+            dispatch({
+              type: ActionType.UPDATE,
+              field: "selectedChat",
+              value: newChat
+            })
+          }
+        }
+      }
+      
+      console.log("消息创建成功, chatId:", chatIdRef.current)
+      dispatch({type: ActionType.ADD_MESSAGE, message})
+      
+      // 2. 生成标题 - 使用更新后的 chatIdRef.current
+      console.log("开始生成标题, chatId:", chatIdRef.current)
+      await generateChatTitle(prompt, chatIdRef.current)
+      
+      console.log("标题生成完成")
+      
+      // 3. 再发送对话内容
+      const messages = [message]
+      doSend(messages)
     }
     
     subscribe("newChatWithPrompt", handleNewChatWithPrompt)
@@ -47,7 +108,7 @@ export default function ChatInput() {
     return () => {
       unsubscribe("newChatWithPrompt", handleNewChatWithPrompt)
     }
-  }, [subscribe, unsubscribe, dispatch])
+  }, [subscribe, unsubscribe, dispatch, publish, currentModel])
 
   async function createOrUpdateMessage(message:Message) {
     const response = await fetch("/api/message/update", {
@@ -101,6 +162,7 @@ export default function ChatInput() {
     return code === 0
     
   }
+  
   async function sendWithPrompt(prompt: string){
     const message = await createOrUpdateMessage({
       id: "",
@@ -113,15 +175,13 @@ export default function ChatInput() {
     }
     dispatch({type: ActionType.ADD_MESSAGE, message})
     const messages = [message]
-    doSend(messages)
     
-    // 使用 prompt 生成标题（这是第一条消息）
-    // 使用更长的延迟确保 selectedChat 已更新
-    setTimeout(() => {
-      console.log("sendWithPrompt - 检测标题, chatId:", chatIdRef.current, "selectedChat:", selectedChat)
-      // 直接使用 chatIdRef.current，因为这是新对话
-      generateChatTitle(message.content, chatIdRef.current)
-    }, 1000)
+    // 先生成标题，再发送对话内容
+    console.log("sendWithPrompt - 开始生成标题, chatId:", chatIdRef.current)
+    await generateChatTitle(message.content, chatIdRef.current)
+    
+    // 标题生成完成后再发送对话内容
+    doSend(messages)
   }
   
   async function send(){
@@ -136,15 +196,15 @@ export default function ChatInput() {
     }
     dispatch({type: ActionType.ADD_MESSAGE, message})
     const messages = messageList.concat([message])
-    doSend(messages)
     
     // 只在发送第一条消息时生成标题
     if(messageList.length === 0) {
-      setTimeout(() => {
-        console.log("send - 检测标题, chatId:", chatIdRef.current, "selectedChat:", selectedChat)
-        generateChatTitle(message.content, chatIdRef.current)
-      }, 1000)
+      console.log("send - 开始生成标题, chatId:", chatIdRef.current)
+      await generateChatTitle(message.content, chatIdRef.current)
     }
+    
+    // 标题生成完成后（或非首条消息时）再发送对话内容
+    doSend(messages)
   }
   
   async function generateChatTitle(userMessage: string, chatId: string) {
@@ -155,7 +215,18 @@ export default function ChatInput() {
         messages: [{
           id: "",
           role: "user",
-          content: `使用 5 到 10 个字直接返回这句话的简要主题，不要解释、不要标点、不要语气词、不要多余文本，如果没有主题，请直接返回'新对话'\n\n${userMessage}`,
+          content: 
+            `请为以下对话生成一个简短的标题。要求：
+              1. 只返回标题文本，不要有任何解释或其他内容
+              2. 标题长度控制在 5-10 个字
+              3. 不要使用标点符号、引号、语气词
+              4. 直接概括对话的核心主题
+              5. 如果无法概括主题，返回"新对话"
+
+            对话内容：
+            ${userMessage}
+
+            标题：`,
           chatId: ""
         }],
         model: currentModel
