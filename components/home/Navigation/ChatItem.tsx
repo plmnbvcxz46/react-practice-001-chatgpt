@@ -3,6 +3,9 @@ import { Chat } from "@/types/chat"
 import { AiOutlineEdit } from "react-icons/ai"
 import { MdCheck, MdClose, MdDeleteOutline } from "react-icons/md"
 import { PiChatBold, PiTrashBold } from "react-icons/pi"
+import { useEventBusContext } from "@/components/EventBusContext"
+import { useAppContext } from "@/components/AppContext"
+import { ActionType } from "@/reducer/AppReducer"
 
 type Props = {
   item: Chat
@@ -13,11 +16,55 @@ type Props = {
 export default function ChatItem({ item, selected, onSelected }: Props) {
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [title, setTitle] = useState(item.title)
+  const {publish} = useEventBusContext()
+  const {dispatch} = useAppContext()
 
   useEffect(() => {
     setEditing(false)
     setDeleting(false)
-  }, [selected])
+    setTitle(item.title)
+  }, [selected, item.title])
+
+  async function updateChat() {
+    const response = await fetch("/api/chat/update", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({id: item.id, title: title})
+    })
+    if (!response.ok) {
+      console.log(response.statusText)
+      return
+    }
+    const {code} = await response.json()
+    if(code === 0){
+      item.title = title
+      publish("fetchchatlist")
+    }
+  }
+  async function deleteChat() {
+    const response = await fetch(`/api/chat/delete?id=${item.id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+    })
+    if (!response.ok) {
+      console.log(response.statusText)
+      return
+    }
+    const {code} = await response.json()
+    if(code === 0){
+      publish("fetchchatlist")
+      dispatch({
+        type: ActionType.UPDATE, 
+        field: "selectedChat",
+        value: null
+      })
+    }
+  }
 
   return (
     <li
@@ -29,14 +76,17 @@ export default function ChatItem({ item, selected, onSelected }: Props) {
       }`}
     >
       <div>{deleting ? <PiTrashBold /> : <PiChatBold />}</div>
-      <div className="flex-1 whitespace-nowrap overflow-hidden">
+      <div className="flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
         {editing ? (
           <input
             autoFocus
             aria-label="编辑会话标题"
             placeholder="编辑会话标题"
             className="w-full bg-transparent outline-none"
-            defaultValue={item.title}
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value)
+            }}
           />
         ) : (
           item.title
@@ -56,9 +106,9 @@ export default function ChatItem({ item, selected, onSelected }: Props) {
               <button
                 onClick={(e) => {
                   if (deleting) {
-                    console.log("deleted")
+                    deleteChat()
                   } else {
-                    console.log("edited")
+                    updateChat()
                   }
                   setDeleting(false)
                   setEditing(false)

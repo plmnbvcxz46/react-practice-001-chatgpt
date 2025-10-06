@@ -19,28 +19,42 @@ export default function ChatList(){
   const {subscribe, unsubscribe} = useEventBusContext()
 
   const loadMoreRef = useRef(null)
+  const hasMoreRef = useRef(false)
+  const isLoadingRef = useRef(false)
 
   async function getData() {
-    const response = await fetch(`/api/chat/list?page=${pageRef.current}`, {
+    if(isLoadingRef.current){
+      return
+    }
+    isLoadingRef.current = true
+    const currentPage = pageRef.current
+    const response = await fetch(`/api/chat/list?page=${currentPage}`, {
       method:"GET"
     })
     if(!response.ok){
       console.log(response.statusText)
+      isLoadingRef.current = false
       return
     }
     const {data} = await response.json()
-    if (pageRef.current === 1){
+    hasMoreRef.current = data.hasMore
+    
+    if (currentPage === 1){
       setChatList(data.list)
     }else {
       setChatList((list)=> list.concat(data.list))
     }
+
+    pageRef.current++
+    isLoadingRef.current = false
   }
   useEffect(()=>{
     getData()
   },[])
   useEffect(() => {
     const callback: EventListener = () => {
-      pageRef.current =1
+      pageRef.current = 1
+      setChatList([])
       getData()
     }
     subscribe("fetchchatlist", callback)
@@ -48,12 +62,22 @@ export default function ChatList(){
   }, [])
 
   useEffect(()=>{
-    let obseve: IntersectionObserver | null = null
+    let observer: IntersectionObserver | null = null
     let div = loadMoreRef.current
     if(div){
       observer = new IntersectionObserver((entries) => {
-        if()
+        if(entries[0].isIntersecting && hasMoreRef.current){
+          console.log("visible")
+          getData()
+        }
       })
+      observer.observe(div)
+    }
+    return () => {
+      if(observer && div) {
+        
+        observer.unobserve(div)
+      }
     }
   },[])
 
@@ -62,7 +86,7 @@ export default function ChatList(){
       groupList.map(([Date,list])=>{
         return (
           <div key={Date}>
-            <div className="sticky top-0 z-10 p-3 text-sm bg-gray-900 text-gray-500">
+            <div className="sticky top-0 z-10 p-3 text-sm bg-gray-900 text-gray-500 overflow-hidden text-ellipsis">
               {Date}
             </div>
             <ul>
@@ -90,7 +114,7 @@ export default function ChatList(){
         )
       })
     }
-    <div ref={loadMoreRef}>$nbsp;</div>
+    <div ref={loadMoreRef}>&nbsp;</div>
     </div>
   )
 }
