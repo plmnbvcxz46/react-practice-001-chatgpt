@@ -2,9 +2,9 @@
 
 使用 Next.js 和 Google Gemini API 构建的 ChatGPT 克隆项目。
 
-## 🚀 快速启动
+##快速启动
 
-**⚠️ 重要：必须使用启动脚本（自动配置代理）**
+**重要：必须使用启动脚本（自动配置代理）**
 
 ```powershell
 .\start.ps1
@@ -12,13 +12,13 @@
 
 > 不要直接使用 `npm run dev`，会导致代理未配置而无法访问 Gemini API！
 
-## 📋 前置条件
+##前置条件
 
 - **代理软件**：Clash/V2Ray 运行在端口 7890
 - **API Key**：系统环境变量 `GEMINI_API_KEY`
 - **Node.js**：18.x+
 
-## 🛠️ 技术栈
+##技术栈
 
 - Next.js 15 + TypeScript
 - Tailwind CSS（支持黑夜模式）
@@ -26,7 +26,7 @@
 - Google Gemini API (2.5 Flash / Pro)
 - React Markdown + 语法高亮
 
-## � 常用命令
+##常用命令
 
 ```powershell
 .\start.ps1           # 启动开发服务器
@@ -35,11 +35,11 @@ npm install           # 安装依赖
 npx prisma studio     # 查看数据库
 ```
 
-## ❓ 遇到问题？
+## 遇到问题？
 
 如果出现 `fetch failed` 错误，查看 [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 
-## 📝 学习笔记
+##学习笔记
 
 ### 需要精进的点
 
@@ -53,7 +53,7 @@ npx prisma studio     # 查看数据库
 - **Prisma** - 数据库 ORM 框架（已切换到 SQLite）
 - **事件发布订阅** - EventBus 模式（重要但还没完全理解）
 
-## 🔗 相关链接
+##相关链接
 
 - [Google Gemini API](https://ai.google.dev/)
 - [Next.js 文档](https://nextjs.org/docs)
