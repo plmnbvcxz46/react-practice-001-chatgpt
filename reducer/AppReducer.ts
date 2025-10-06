@@ -8,6 +8,7 @@ import { Chat } from "@prisma/client"
   messageList: Message[]
   streamingId: string
   selectedChat?: Chat
+  isWaitingResponse: boolean
  }
 
  export enum ActionType {
@@ -35,7 +36,8 @@ export const initState: State = {
   themeMode: "light",
   currentModel: "g2.5flash",
   messageList: [],
-  streamingId: ""
+  streamingId: "",
+  isWaitingResponse: false
 }
 
 export function reducer(state: State, action: Action): State {

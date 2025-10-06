@@ -46,41 +46,52 @@ export async function POST(request: NextRequest) {
     // 初始化 Gemini AI 客户端 (自动从环境变量 GEMINI_API_KEY 获取密钥)
     const ai = new GoogleGenAI({});
     
-    // 获取用户最后一条消息
-    const prompt = messages[messages.length - 1].content;
-    
     // 根据 model 参数选择使用的模型
     const modelName = model === "g2.5pro" ? "gemini-2.5-pro" : "gemini-2.5-flash";
     
     console.log("使用模型:", modelName);
-    console.log("提示词:", prompt.substring(0, 100));
+    console.log("完整对话历史:", messages.map(m => `${m.role}: ${m.content.substring(0, 50)}...`));
     
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          console.log("开始调用 Gemini API...");
+          console.log("开始调用 Gemini API (多轮对话模式)...");
           console.log("API 端点: https://generativelanguage.googleapis.com");
           console.log("请求模型:", modelName);
           
-          const startTime = Date.now();
-          const response = await ai.models.generateContent({
+          // 将消息历史转换为 Gemini 格式
+          // 去掉最后一条用户消息（会单独发送）
+          const history = messages.slice(0, -1).map(msg => ({
+            role: msg.role === "assistant" ? "model" : "user",
+            parts: [{ text: msg.content }]
+          }));
+          
+          // 获取最后一条用户消息
+          const lastMessage = messages[messages.length - 1].content;
+          
+          // 创建聊天会话
+          const chat = ai.chats.create({
             model: modelName,
-            contents: prompt,
+            history: history.length > 0 ? history : undefined,
           });
-          const endTime = Date.now();
           
-          console.log(`✓ 收到 Gemini API 响应 (耗时: ${endTime - startTime}ms)`);
-          const text = response.text || "";
-          console.log("响应长度:", text.length, "字符");
-          
-          // 逐字符流式传输响应
-          for (let i = 0; i < text.length; i++) {
-            controller.enqueue(encoder.encode(text[i]));
+          // 使用流式发送消息
+          const response = await chat.sendMessageStream({
+            message: lastMessage,
+          });
+
+          for await (const chunk of response) {
+            const text = chunk.text;
+            if (text) {
+              controller.enqueue(encoder.encode(text));
+            }
           }
           
+          console.log("✓ 流式响应完成");
           controller.close();
-          console.log("✓ 流式传输完成");
+
+
         } catch (error) {
           console.error("✗ Gemini API 错误:", error);
           

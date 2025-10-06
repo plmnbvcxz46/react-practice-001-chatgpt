@@ -110,6 +110,17 @@ export default function ChatInput() {
     stopRef.current = false
     const body: MessageRequestBody = {messages, model: currentModel}
     setMessageText("")
+    
+    // 打印多轮对话日志
+    console.log("发送多轮对话，消息数量:", messages.length)
+    console.log("对话历史:", messages.map(m => `${m.role}: ${m.content.substring(0, 30)}...`))
+    
+    // 设置等待响应状态
+    dispatch({
+      type: ActionType.UPDATE,
+      field: "isWaitingResponse",
+      value: true
+    })
     const controller = new AbortController()
     const response = await fetch("/api/chat", {
       method: "POST",
@@ -147,6 +158,7 @@ export default function ChatInput() {
     const decoder = new TextDecoder()
     let done = false
     let content = ""
+    let buffer = "" // 用于缓存接收到的字符
     while (!done) {
       if(stopRef.current) {
         controller.abort()
@@ -155,10 +167,33 @@ export default function ChatInput() {
       const result = await reader.read()
       done = result.done
       const chunk = decoder.decode(result.value)
-      content += chunk
-      dispatch( {type: ActionType.UPDATE_MESSAGE,
-         message: {...responseMessage, content}
+      buffer += chunk
+      
+      // 当收到第一个字符时，关闭等待状态
+      if (buffer.length > 0) {
+        dispatch({
+          type: ActionType.UPDATE,
+          field: "isWaitingResponse",
+          value: false
         })
+      }
+      
+      // 每次取出2-3个字符进行显示
+      while (buffer.length > 0) {
+        const chunkSize = 1
+        const displayChunk = buffer.substring(0, chunkSize)
+        buffer = buffer.substring(chunkSize)
+        content += displayChunk
+        
+        dispatch({type: ActionType.UPDATE_MESSAGE,
+          message: {...responseMessage, content}
+        })
+        
+        // 添加小延迟，让显示更流畅
+        if (buffer.length > 0) {
+          await new Promise(resolve => setTimeout(resolve, 30))
+        }
+      }
     }
     createOrUpdateMessage({
       ...responseMessage, content
@@ -167,6 +202,11 @@ export default function ChatInput() {
       type:ActionType.UPDATE,
       field:"streamingId", 
       value: ""
+    })
+    dispatch({
+      type: ActionType.UPDATE,
+      field: "isWaitingResponse",
+      value: false
     })
   }
   return (
