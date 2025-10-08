@@ -1,10 +1,12 @@
-# ChatGPT Clone - Gemini API 版本
+# react网页练习
+
+参照教程 [知行小课](https://x.zhixing.co/courses/react-hands-on-tutorial-for-beginners/)
 
 使用 Next.js 和 Google Gemini API 构建的 ai聊天网站练习
 
 ## 快速启动
 
-** 重要：必须使用启动脚本（自动配置代理）**
+** 重要：必须使用启动脚本（自动配置代理）** （gemini需要代理）
 
 ```powershell
 .\start.ps1
