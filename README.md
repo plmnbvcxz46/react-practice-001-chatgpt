@@ -4,7 +4,7 @@
 
 ##快速启动
 
-**重要：必须使用启动脚本（自动配置代理）**
+** 重要：必须使用启动脚本（自动配置代理）**
 
 ```powershell
 .\start.ps1
@@ -12,13 +12,13 @@
 
 > 不要直接使用 `npm run dev`，会导致代理未配置而无法访问 Gemini API！
 
-##前置条件
+## 前置条件
 
 - **代理软件**：Clash/V2Ray 运行在端口 7890
 - **API Key**：系统环境变量 `GEMINI_API_KEY`
 - **Node.js**：18.x+
 
-##技术栈
+## 技术栈
 
 - Next.js 15 + TypeScript
 - Tailwind CSS（支持黑夜模式）
