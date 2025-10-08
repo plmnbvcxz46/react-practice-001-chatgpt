@@ -1,8 +1,8 @@
 # ChatGPT Clone - Gemini API 版本
 
-使用 Next.js 和 Google Gemini API 构建的 ChatGPT 克隆项目。
+使用 Next.js 和 Google Gemini API 构建的 ai聊天网站练习
 
-##快速启动
+## 快速启动
 
 ** 重要：必须使用启动脚本（自动配置代理）**
 
@@ -26,7 +26,7 @@
 - Google Gemini API (2.5 Flash / Pro)
 - React Markdown + 语法高亮
 
-##常用命令
+## 常用命令
 
 ```powershell
 .\start.ps1           # 启动开发服务器
@@ -39,7 +39,7 @@ npx prisma studio     # 查看数据库
 
 如果出现 `fetch failed` 错误，查看 [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 
-##学习笔记
+## 学习笔记
 
 ### 需要精进的点
 
@@ -53,7 +53,7 @@ npx prisma studio     # 查看数据库
 - **Prisma** - 数据库 ORM 框架（已切换到 SQLite）
 - **事件发布订阅** - EventBus 模式（重要但还没完全理解）
 
-##相关链接
+## 相关链接
 
 - [Google Gemini API](https://ai.google.dev/)
 - [Next.js 文档](https://nextjs.org/docs)
