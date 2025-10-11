@@ -1,27 +1,5 @@
 import { MessageRequestBody } from "@/types/chat";
 import { NextRequest } from "next/server";
-import { GoogleGenAI } from "@google/genai";
-import { ProxyAgent, setGlobalDispatcher } from "undici";
-
-// 配置代理（如果设置了代理环境变量）
-if (process.env.HTTP_PROXY || process.env.HTTPS_PROXY) {
-  const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || "";
-  console.log("✓ 使用代理:", proxyUrl);
-  try {
-    const proxyAgent = new ProxyAgent({
-      uri: proxyUrl,
-      keepAliveTimeout: 10000,
-      keepAliveMaxTimeout: 10000,
-    });
-    setGlobalDispatcher(proxyAgent);
-    console.log("✓ 代理配置成功");
-  } catch (error) {
-    console.error("✗ 代理配置失败:", error);
-  }
-} else {
-  console.log("⚠ 未检测到代理环境变量 (HTTP_PROXY/HTTPS_PROXY)");
-  console.log("如果需要使用代理访问 Gemini API，请设置环境变量");
-}
 
 export async function GET() {
   return new Response("请使用 POST 请求", { status: 200 });
@@ -31,95 +9,130 @@ export async function POST(request: NextRequest) {
   try {
     const { messages, model } = (await request.json()) as MessageRequestBody;
     
-    console.log("接收到请求，模型:", model);
-    console.log("消息数量:", messages.length);
-    
     // 检查环境变量
-    if (!process.env.GEMINI_API_KEY) {
-      console.error("GEMINI_API_KEY 环境变量未设置");
+    if (!process.env.OPENROUTER_API_KEY) {
       return new Response(
-        JSON.stringify({ error: "API 密钥未配置" }),
+        JSON.stringify({ error: "OpenRouter API 密钥未配置" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
     
-    // 初始化 Gemini AI 客户端 (自动从环境变量 GEMINI_API_KEY 获取密钥)
-    const ai = new GoogleGenAI({});
+    // 将消息转换为 OpenRouter/OpenAI 格式
+    const openRouterMessages = messages.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
     
-    // 根据 model 参数选择使用的模型
-    const modelName = model === "g2.5pro" ? "gemini-2.5-pro" : "gemini-2.5-flash";
-    
-    console.log("使用模型:", modelName);
-    console.log("完整对话历史:", messages.map(m => `${m.role}: ${m.content.substring(0, 50)}...`));
-    
+    // 调用 OpenRouter API
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": process.env.OPENROUTER_SITE_URL || "http://localhost:3000",
+        "X-Title": process.env.OPENROUTER_SITE_NAME || "ChatGPT Clone",
+      },
+      body: JSON.stringify({
+        model: model || "openai/gpt-4o-mini",
+        messages: openRouterMessages,
+        stream: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
+      return new Response(
+        JSON.stringify({ error: errorData.error?.message || "请求失败" }),
+        { status: response.status, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // 创建流式响应
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          console.log("开始调用 Gemini API (多轮对话模式)...");
-          console.log("API 端点: https://generativelanguage.googleapis.com");
-          console.log("请求模型:", modelName);
-          
-          // 将消息历史转换为 Gemini 格式
-          // 去掉最后一条用户消息（会单独发送）
-          const history = messages.slice(0, -1).map(msg => ({
-            role: msg.role === "assistant" ? "model" : "user",
-            parts: [{ text: msg.content }]
-          }));
-          
-          // 获取最后一条用户消息
-          const lastMessage = messages[messages.length - 1].content;
-          
-          // 创建聊天会话
-          const chat = ai.chats.create({
-            model: modelName,
-            history: history.length > 0 ? history : undefined,
-          });
-          
-          // 使用流式发送消息
-          const response = await chat.sendMessageStream({
-            message: lastMessage,
-          });
-
-          for await (const chunk of response) {
-            const text = chunk.text;
-            if (text) {
-              controller.enqueue(encoder.encode(text));
-            }
+          const reader = response.body?.getReader();
+          if (!reader) {
+            throw new Error("无法读取响应流");
           }
-          
-          console.log("✓ 流式响应完成");
-          controller.close();
 
+          const decoder = new TextDecoder();
+          let buffer = "";
 
-        } catch (error) {
-          console.error("✗ Gemini API 错误:", error);
-          
-          // 详细的错误信息
-          let errorMessage = "未知错误";
-          if (error instanceof Error) {
-            errorMessage = error.message;
-            console.error("错误堆栈:", error.stack);
+          while (true) {
+            const { done, value } = await reader.read();
             
-            // 检查是否是网络错误
-            if (errorMessage.includes("fetch failed")) {
-              errorMessage = "网络连接失败，请检查：\n1. 代理是否已启动 (Clash/V2Ray)\n2. 环境变量 HTTP_PROXY 和 HTTPS_PROXY 是否正确设置\n3. 防火墙是否阻止连接";
-            } else if (errorMessage.includes("ECONNREFUSED")) {
-              errorMessage = "连接被拒绝，代理服务可能未运行";
-            } else if (errorMessage.includes("ETIMEDOUT")) {
-              errorMessage = "连接超时，请检查代理配置或网络连接";
+            if (done) {
+              break;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              const trimmedLine = line.trim();
+              
+              // 跳过空行和注释
+              if (!trimmedLine || trimmedLine.startsWith(":")) {
+                continue;
+              }
+
+              // 处理 SSE 数据
+              if (trimmedLine.startsWith("data: ")) {
+                const data = trimmedLine.slice(6);
+                
+                // 检查是否是结束标记
+                if (data === "[DONE]") {
+                  break;
+                }
+
+                try {
+                  const parsed = JSON.parse(data);
+                  
+                  // 检查是否有错误
+                  if (parsed.error) {
+                    controller.enqueue(encoder.encode(`\n\n错误: ${parsed.error.message}`));
+                    break;
+                  }
+
+                  // 提取内容
+                  const content = parsed.choices?.[0]?.delta?.content;
+                  if (content) {
+                    controller.enqueue(encoder.encode(content));
+                  }
+
+                  // 检查是否完成
+                  const finishReason = parsed.choices?.[0]?.finish_reason;
+                  if (finishReason === "stop" || finishReason === "error") {
+                    break;
+                  }
+                } catch (parseError) {
+                  // 忽略 JSON 解析错误
+                  console.error("JSON 解析错误:", parseError);
+                }
+              }
             }
           }
           
-          controller.enqueue(encoder.encode(`错误: ${errorMessage}`));
+          controller.close();
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : "未知错误";
+          controller.enqueue(encoder.encode(`\n\n错误: ${errorMessage}`));
           controller.close();
         }
       },
     });
     
-    return new Response(stream);
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
+    });
   } catch (error) {
-    console.error("请求处理错误:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "未知错误" }),
       { status: 500, headers: { "Content-Type": "application/json" } }

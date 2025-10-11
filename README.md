@@ -2,22 +2,42 @@
 
 参照教程 [知行小课](https://x.zhixing.co/courses/react-hands-on-tutorial-for-beginners/)
 
-使用 Next.js 和 Google Gemini API 构建的 ai聊天网站练习
+使用 Next.js 和 OpenRouter API 构建的 AI 聊天网站练习
 
-## 快速启动
+## 🎉 重大更新：已迁移到 OpenRouter
 
-** 重要：必须使用启动脚本（自动配置代理）** （gemini需要代理）
+本项目已从 Google Gemini API 迁移到 **OpenRouter**，支持访问数百个 AI 模型！
 
-```powershell
-.\start.ps1
+### 快速开始
+
+1. **配置环境变量**
+
+创建 `.env.local` 文件：
+
+```bash
+OPENROUTER_API_KEY=your_api_key_here
+OPENROUTER_SITE_URL=http://localhost:3000
+OPENROUTER_SITE_NAME=ChatGPT Clone
 ```
 
-> 不要直接使用 `npm run dev`，会导致代理未配置而无法访问 Gemini API！
+2. **启动应用**
+
+```powershell
+npm install
+npm run dev
+```
+
+3. **访问应用**
+
+打开浏览器访问 http://localhost:3000
+
+> 📖 详细设置指南请查看 [QUICKSTART.md](./QUICKSTART.md)
+> 
+> 📋 迁移详情请查看 [OPENROUTER_MIGRATION.md](./OPENROUTER_MIGRATION.md)
 
 ## 前置条件
 
-- **代理软件**：Clash/V2Ray 运行在端口 7890
-- **API Key**：系统环境变量 `GEMINI_API_KEY`
+- **API Key**：从 [OpenRouter](https://openrouter.ai/keys) 获取（**不再需要代理！**）
 - **Node.js**：18.x+
 
 ## 技术栈
@@ -25,21 +45,34 @@
 - Next.js 15 + TypeScript
 - Tailwind CSS（支持黑夜模式）
 - Prisma + SQLite
-- Google Gemini API (2.5 Flash / Pro)
+- **OpenRouter API** - 统一访问 GPT-4、Claude、Gemini、Llama 等数百个模型
 - React Markdown + 语法高亮
+
+## 主要特性
+
+✅ **多模型支持**：动态加载可用模型，一键切换
+✅ **流式响应**：实时显示 AI 回复
+✅ **完整聊天历史**：基于 Prisma + SQLite
+✅ **黑夜模式**：自动适配系统主题
+✅ **Markdown 渲染**：支持代码高亮、表格等
 
 ## 常用命令
 
 ```powershell
-.\start.ps1           # 启动开发服务器
-.\test-proxy.ps1      # 测试代理连接
+npm run dev           # 启动开发服务器
 npm install           # 安装依赖
 npx prisma studio     # 查看数据库
+npm run build         # 构建生产版本
 ```
 
-## 遇到问题？
+## 支持的模型示例
 
-如果出现 `fetch failed` 错误，查看 [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
+- OpenAI GPT-4o / GPT-4o Mini
+- Anthropic Claude 3.5 Sonnet / Opus
+- Google Gemini 2.5 Pro / Flash
+- Meta Llama 3.3 70B
+- Mistral Large
+- 等等...
 
 ## 学习笔记
 
@@ -57,7 +90,9 @@ npx prisma studio     # 查看数据库
 
 ## 相关链接
 
-- [Google Gemini API](https://ai.google.dev/)
+- [OpenRouter 官网](https://openrouter.ai/)
+- [OpenRouter API 文档](https://openrouter.ai/docs)
+- [OpenRouter 模型列表](https://openrouter.ai/models)
 - [Next.js 文档](https://nextjs.org/docs)
 - [Prisma 文档](https://www.prisma.io/docs)
 - [React Markdown](https://github.com/remarkjs/react-markdown)

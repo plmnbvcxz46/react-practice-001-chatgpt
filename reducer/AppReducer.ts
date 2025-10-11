@@ -34,7 +34,7 @@ export type Action = UpdateAction | MessageAction
 export const initState: State = {
   displayNavigation: true,
   themeMode: "light",
-  currentModel: "g2.5flash",
+  currentModel: "openai/gpt-4o-mini", // 默认使用 OpenRouter 的 GPT-4o Mini
   messageList: [],
   streamingId: "",
   isWaitingResponse: false

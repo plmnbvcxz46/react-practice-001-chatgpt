@@ -16,12 +16,22 @@ export interface MessageRequestBody {
   model: string
 }
 
-// Gemini 多轮对话格式的类型定义
-export interface GeminiPart {
-  text: string
-}
-
-export interface GeminiContent {
-  role: "user" | "model"
-  parts: GeminiPart[]
+// OpenRouter 模型信息类型定义
+export interface OpenRouterModel {
+  id: string
+  name: string
+  description: string
+  context_length: number
+  pricing: {
+    prompt: string
+    completion: string
+  }
+  architecture: {
+    input_modalities: string[]
+    output_modalities: string[]
+  }
+  top_provider: {
+    max_completion_tokens: number
+    is_moderated: boolean
+  }
 }
